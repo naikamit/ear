@@ -1,80 +1,96 @@
-# Ear — Android
+# Ear
 
-The commute build. Same drill as `millsandgoon.com/ear`, but it keeps working
-with the phone in your pocket, which a browser cannot do: when the screen
-locks, the OS takes the microphone back and no web API gets it returned.
+Interval and chord practice for a commute, by ear and by voice, on an Android
+phone with the screen off.
 
-A foreground service typed `microphone` holds it. That is the entire reason
-this exists.
+It began as the third app inside a web server and has left: the browser could
+not hold the microphone once the screen locked, and its speech recognition went
+over the network, which is the opposite of a commute. A foreground service
+typed `microphone` holds it. That is the entire reason this exists.
 
-## What is different from the web app
+**Nothing leaves the phone.** The app asks for no network permission at all —
+synthesis, recognition, scoring and your record are all local. The install
+prompt can say so because it is true.
 
-**Your voice only ever answers the question.** Every control is a button.
-That is a narrower job than the web app gave it and a better one: the
+## How it works
+
+**Your voice only ever answers the question.** Every control is a button. The
 recogniser never has to tell an answer from an instruction, a stray word cannot
-trigger one, and the grammar shrinks to the twelve things being taught.
+trigger one, and the grammar shrinks to the things being taught.
 
 **Recognition is offline and grammar-constrained.** Vosk is told the only
-things you could sensibly say — twelve interval names and their aliases. It
-chooses between those, not between them and the whole English language, and
-never goes near a network. `[unk]` is in the grammar, so humming to find a note
-comes back as out-of-grammar and is ignored rather than scored.
+things you could sensibly say — the interval and chord names, and their
+aliases. It chooses between those, not between them and the whole English
+language. `[unk]` is in the grammar, so humming to find a note comes back as
+out-of-grammar and is ignored rather than scored.
+
+**Every answer is also a key.** The vocabulary is a keypad: tap an answer and
+it scores exactly as speaking it would. A recogniser that mishears you twice
+running should not be the only way past a question.
 
 **Silence is not a wrong answer.** If nothing is said the question plays again,
 up to five times, and then the session pauses — silence usually means you did
 not hear it, or that the phone is in a pocket.
 
-**Chords as well as intervals.** The same exercise with more notes: offsets
-above a root, played as a block. Naming a chord quality is the same act of
-recall as naming an interval, so they share the drill, the scoring and the
-mastery store. The menu is two levels — Harmonic, Melodic, Chords, then the
-lessons inside each, with a live tally beside every one.
-
 **The questions never run out.** Each is generated on the spot: a fresh item
 weighted towards what you miss, a root that never repeats twice running, and an
-instrument picked at random. Reset clears the tally and keeps going.
+instrument picked at random. Melodic questions ascend. Reset clears the tally
+for that exercise and keeps going.
 
-**Three voices**: piano, classical guitar, acoustic guitar. The instrument and
-the direction are logged but never shown — on a melodic lesson, "ascending" is
-half the answer.
-
-**Nothing narrates the microphone.** No "listening" caption, no running
-transcript. Neither tells you anything you could not already hear, and both
-pull the eye back to a screen you are supposed to be ignoring. The page is
-ordered for a thumb: what to say, then start and reset, then the two
-mid-question controls, then the score — as ticks and crosses, the same two
-marks the menu uses.
-
-**Most of the web app's session code is gone.** The self-echo gate, the restart
-churn, the reopen-gap backoff, the visibility juggling, the wake lock, the
-interim-versus-final race — all of it existed to fight the browser. Vosk
-streams continuously and the service simply keeps running.
-
-**Synthesis is the same, ported.** Additive piano with string inharmonicity,
-Karplus-Strong guitars with a fractionally interpolated delay line. The Kotlin
-was measured against the verified JavaScript: guitars within 0.4 cents
+**Three voices**: piano, classical guitar, acoustic guitar. Additive piano with
+string inharmonicity; Karplus-Strong guitars with a fractionally interpolated
+delay line, because integer delay lengths detune high notes by up to 17 cents
+and interval identification is the whole task. Guitars land within 0.4 cents
 absolute, interval error under 0.35 cents.
 
-**Progress is shared.** It posts to the same `/ear/api/*` endpoints, so mastery
-follows you between the phone and the desk.
+**Every question is the same loudness.** Notes are levelled on measured
+loudness rather than peak — a peak tracks the sharpest transient, a piano
+hammer or a steel pick, while what you hear is the body of the note. Peak
+normalisation left an 8.8 dB spread across voices and chord shapes; this holds
+it to 0.01 dB, with a soft knee on the peaks.
+
+**A guitar neck, always on the page.** Six strings, twelve frets, playable:
+tap a fret and it sounds. After a wrong answer it marks where the notes were,
+and clears when the next question starts. The fingering is chosen as a whole —
+lowest position on the neck, then most compact — so it is a shape a hand could
+hold.
+
+**The score belongs to the exercise.** Fifths answered right say nothing about
+your sevenths, so each lesson carries its own ticks and crosses, on the main
+page and in the menu alike.
+
+**A headset takes the whole session or none of it.** Bluetooth earbuds are two
+devices pretending to be one: good audio on one profile with no microphone, and
+the microphone on a narrowband call channel that suspends the first. You cannot
+have both. With a headset connected the tones, the prompts and the answers all
+go over it; with nothing connected the phone keeps its microphone and its full
+sample rate.
 
 ## Before it will build
 
 The speech model is not in git — see `app/src/main/assets/PUT-THE-MODEL-HERE.md`.
-Roughly 40 MB, downloaded once.
+Roughly 40 MB, downloaded once. CI fetches and caches it.
+
+First time on a machine, read `FIRST-RUN.md`.
 
 ## Source of truth
 
-`kitecast/ear.py` holds the canonical interval table and lesson ladder.
-`tests/test_ear.py` parses both `ear/intervals.js` and
-`android/.../Intervals.kt` and fails if any of the three drift apart —
-no compiler involved, which is exactly what catches a transcription slip.
+`Intervals.kt` holds the interval table, the chord table and the lesson ladder,
+and it is the only copy — there were three, in three languages, and a test
+suite whose main job was proving they still agreed.
 
-## Honest status
+The tests run on the JVM, so CI runs them on every push without a device:
 
-Written without a compiler or an Android SDK to hand: this container has
-neither, and `dl.google.com`, Gradle's distribution host and Maven Central are
-all blocked from it. The interval table, the lesson ladder and the synthesis
-constants are verified by test. The Kotlin itself has never been compiled, so
-expect the first build to surface ordinary compile errors, and read
-`android/FIRST-RUN.md` before starting.
+- `IntervalsTest` — the ladder and the tables, asserted directly.
+- `SynthTest` — loudness measured with its own meter, because a normaliser
+  checked with its own ruler proves nothing.
+- `NeckTest` — every question the drill can ask, checked that each note is
+  drawn on a fret that really sounds it.
+- `PageTest` — the decisions a compiler cannot hold: an order, a colour, a word
+  that should not be on the screen.
+
+## Builds
+
+Every push builds an APK and the default branch publishes it where a phone can
+install it, at `releases/download/latest/ear.apk`. The build fails unless it
+can prove that link answers 200.

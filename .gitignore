@@ -1,0 +1,10 @@
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.apk
+*.keystore
+
+# 40 MB of third-party binary, fetched by CI and by FIRST-RUN.md.
+app/src/main/assets/model-en-us/

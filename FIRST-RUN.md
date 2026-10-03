@@ -25,12 +25,12 @@ the SDK, the platform tools and an emulator image. This is the long part.
 
 Get the code onto the computer:
 
-    git clone https://github.com/naikamit/KiteCast.git
+    git clone https://github.com/naikamit/ear.git
 
-This makes a `KiteCast` folder wherever you ran it.
+This makes an `ear` folder wherever you ran it.
 
-In Android Studio: **Open**, then select the `android` folder inside `KiteCast`
-— *not* the `KiteCast` folder itself. It must be the folder containing
+In Android Studio: **Open**, then select the `ear` folder. It is the folder
+containing
 `settings.gradle.kts`.
 
 It will say "Gradle sync in progress" and take a few minutes. If it offers to
@@ -44,7 +44,7 @@ third-party binary.
 
 **Windows** (cmd — `tar` is built in since Windows 10; `unzip` is not):
 
-    cd KiteCast\android\app\src\main\assets
+    cd ear\app\src\main\assets
     curl -LO https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
     tar -xf vosk-model-small-en-us-0.15.zip
     ren vosk-model-small-en-us-0.15 model-en-us
@@ -54,7 +54,7 @@ third-party binary.
 
 **macOS / Linux**:
 
-    cd KiteCast/android/app/src/main/assets
+    cd ear/app/src/main/assets
     curl -LO https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
     unzip vosk-model-small-en-us-0.15.zip
     mv vosk-model-small-en-us-0.15 model-en-us
@@ -150,7 +150,7 @@ point of this build.
 |---|---|
 | `'unzip' is not recognized` | Windows — use `tar -xf` instead |
 | phone never appears in Android Studio | charge-only cable, or USB mode not set to file transfer |
-| `SDK location not found` | open the `android` folder, not `KiteCast` |
+| `SDK location not found` | open the `ear` folder itself |
 | build fails on `vosk-android` | version bump needed; send me the error |
 | app runs, hears nothing | model folder in the wrong place, or the `uuid` file is missing — check step 3 |
 | works, then stops when locked | Samsung battery optimisation — step 8 |
